@@ -13,13 +13,13 @@ from bot.database.queries import (
 )
 from utils import log_info
 
-FETCH_INTERVAL_MIN = 2
+FETCH_INTERVAL_MIN = 5
 
 def schedule_fetching(application):
     scheduler = AsyncIOScheduler()
     scheduler.add_job(lambda: fetch_and_forward(application.bot), 'interval', minutes=FETCH_INTERVAL_MIN)
     scheduler.start()
-    log_info("Scheduled article fetching every 30 minutes")
+    log_info("Scheduled article fetching every 5 minutes")
 
 async def fetch_and_forward(bot: Bot):
     # For now, fetch all users from sources table
