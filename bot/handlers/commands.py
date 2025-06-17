@@ -110,7 +110,7 @@ async def list_sources(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not sources:
         await update.message.reply_text("🔍 You have no sources added yet.")
         return
-    formatted = "\n".join(f"• {url}" for url in sources)
+    formatted = "\n".join(f"• `{url}`" for url in sources)
     await update.message.reply_text(f"📚 *Your Sources:*\n{formatted}", parse_mode=ParseMode.MARKDOWN)
 
 async def add_target(update: Update, context: ContextTypes.DEFAULT_TYPE):

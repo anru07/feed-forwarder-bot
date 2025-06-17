@@ -46,6 +46,11 @@ async def fetch_and_forward(bot: Bot):
                     continue
                 for chat_id in targets:
                     try:
+                        # Escape special Markdown characters
+                        safe_title = article['title'].replace('*', '\\*').replace('_', '\\_').replace('[', '\\[').replace(']', '\\]')
+                        safe_summary = article['summary'].replace('*', '\\*').replace('_', '\\_').replace('[', '\\[').replace(']', '\\]')
+                        text = f"*{safe_title}*\n{safe_summary}\n🔗 {article['link']}"
+                        
                         await bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
                         log_info(f"Forwarded article to {chat_id}: {article['title']}")
                     except Exception as e:
