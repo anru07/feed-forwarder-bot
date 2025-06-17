@@ -23,4 +23,4 @@ def log_info(message: str):
     """
     Central logging utility.
     """
-    logging.info(f"[FeedForwarder] {message}")")
+    logging.info(f"[FeedForwarder] {message}")
