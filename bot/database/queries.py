@@ -39,6 +39,45 @@ async def get_sources(user_id: int) -> list[str]:
 
 # -- Target Management --
 
+async def add_target(source_url: str, chat_id: int) -> bool:
+    async with aiosqlite.connect(DB_FILE) as db:
+        cursor = await db.execute("SELECT id FROM sources WHERE url = ?", (source_url,))
+        row = await cursor.fetchone()
+        if not row:
+            return False
+        source_id = row[0]
+        try:
+            await db.execute("INSERT INTO targets (source_id, chat_id) VALUES (?, ?)", (source_id, chat_id))
+            await db.commit()
+            return True
+        except aiosqlite.IntegrityError:
+            return False
+
+async def get_targets_by_source(source_url: str) -> list[int]:
+    async with aiosqlite.connect(DB_FILE) as db:
+        cursor = await db.execute("""
+            SELECT t.chat_id FROM targets t
+            JOIN sources s ON t.source_id = s.id
+            WHERE s.url = ?
+        """, (source_url,))
+        return [row[0] for row in await cursor.fetchall()]
+
+# -- Filter Management --
+
+async def add_filter(source_url: str, keyword: str) -> bool:
+    async with aiosqlite.connect(DB_FILE) as db:
+        cursor = await db.execute("SELECT id FROM sources WHERE url = ?", (source_url,))
+        row = await cursor.fetchone()
+        if not row:
+            return False
+        source_id = row[0]
+        try:
+            await db.execute("INSERT INTO filters (source_id, keyword) VALUES (?, ?)", (source_id, keyword))
+            await db.commit()
+            return True
+        except aiosqlite.IntegrityError:
+            return False
+
 async def add_target(source_url: str, chat_id: int):
     async with aiosqlite.connect(DB_FILE) as db:
         cursor = await db.execute(
