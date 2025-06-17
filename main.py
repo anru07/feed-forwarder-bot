@@ -1,0 +1,52 @@
+import asyncio
+import logging
+import os
+import nest_asyncio
+from aiohttp import web
+from telegram.ext import Application
+
+from bot.handlers.commands import register_handlers
+from bot.scheduler.jobs import schedule_fetching
+from bot.database.core import init_db
+from utils import get_env_variable
+
+# 🔧 Setup async compatibility for environments like Replit
+nest_asyncio.apply()
+
+# 📡 Health check route (optional)
+async def handle_healthcheck(request):
+    return web.Response(text="OK")
+
+# 🌐 Start the aiohttp web server (for /healthz or UptimeRobot)
+async def start_web():
+    app = web.Application()
+    app.add_routes([web.get("/healthz", handle_healthcheck)])
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, port=int(os.getenv("PORT", 8080)))
+    await site.start()
+    logging.info("Web server running at /healthz")
+
+# 🤖 Start the bot + scheduler
+async def start_bot():
+    token = get_env_variable("TELEGRAM_TOKEN")
+    admin_ids = get_env_variable("ADMIN_USER_IDS", "").split(",")
+    admin_ids = [int(uid.strip()) for uid in admin_ids if uid.strip().isdigit()]
+
+    application = Application.builder().token(token).build()
+
+    await init_db()
+    register_handlers(application, admin_ids)
+    schedule_fetching(application)
+
+    logging.info("Bot is polling...")
+    await application.run_polling()
+
+# 🚀 Launch both bot and health server
+async def start_bot_and_server():
+    await asyncio.gather(start_bot(), start_web())
+
+# 🧠 Entrypoint
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(start_bot_and_server())
