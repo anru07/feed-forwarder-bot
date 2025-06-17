@@ -1,14 +1,18 @@
+# Use official Python image
 FROM python:3.10-slim
 
+# Set working directory inside the container
 WORKDIR /app
 
-# Install dependencies
-COPY pyproject.toml ./
+# Upgrade pip
 RUN pip install --upgrade pip
-RUN pip install python-telegram-bot==20.7 aiohttp
 
-# Copy the rest of the app
+# Install dependencies
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+# Copy the rest of your app
 COPY . .
 
-# Run your bot
+# Start your bot
 CMD ["python", "main.py"]
