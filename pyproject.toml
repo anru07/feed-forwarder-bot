@@ -2,7 +2,9 @@
 name = "telegram-bot"
 version = "0.1.0"
 description = "A Telegram bot running on Render with Python 3.10"
-authors = ["Your Name <you@example.com>"]
+authors = [
+    { name = "Your Name", email = "you@example.com" }
+]
 requires-python = ">=3.10,<3.11"
 
 dependencies = [
