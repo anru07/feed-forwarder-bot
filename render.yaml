@@ -2,7 +2,6 @@ services:
   - type: web
     name: feedforwarder-web
     runtime: python
-    pythonVersion: 3.10.13
     buildCommand: pip install -r requirements.txt
     startCommand: python main.py
     envVars:
