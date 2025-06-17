@@ -133,31 +133,23 @@ async def add_target(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ Could not add target (invalid source or duplicate).")
 
 async def remove_target(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        args = context.args
-        if len(args) < 2:
-            await update.message.reply_text("❌ Usage: /removetarget <source_url> <chat_id>")
-            return
+    args = context.args
+    if len(args) < 2:
+        await update.message.reply_text("❌ Usage: /removetarget <source_url> <chat_id>")
+        return
 
-        source_url = args[0]
-        try:
-            chat_id = int(args[1])
-        except ValueError:
-            await update.message.reply_text("❌ Invalid chat ID.")
-            return
+    source_url = args[0]
+    try:
+        chat_id = int(args[1])
+    except ValueError:
+        await update.message.reply_text("❌ Invalid chat ID.")
+        return
 
-        from aiosqlite import connect
-        async with connect("feedforwarder.db") as db:
-            cursor = await db.execute("""
-                DELETE FROM targets
-                WHERE chat_id = ? AND source_id IN (
-                    SELECT id FROM sources WHERE url = ?
-                )
-            """, (chat_id, source_url))
-            await db.commit()
-            if cursor.rowcount:
-                await update.message.reply_text(f"🗑️ Target removed: `{chat_id}` from {source_url}", parse_mode=ParseMode.MARKDOWN)
-            else:
-                await update.message.reply_text("⚠️ Target not found.")
+    success = await db.remove_target(source_url, chat_id)
+    if success:
+        await update.message.reply_text(f"🗑️ Target removed: `{chat_id}` from {source_url}", parse_mode=ParseMode.MARKDOWN)
+    else:
+        await update.message.reply_text("⚠️ Target not found.")
 
 async def list_targets(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args
@@ -188,26 +180,18 @@ async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ Could not add filter. Is the source valid?")
 
 async def remove_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        args = context.args
-        if len(args) < 2:
-            await update.message.reply_text("❌ Usage: /removefilter <source_url> <keyword>")
-            return
+    args = context.args
+    if len(args) < 2:
+        await update.message.reply_text("❌ Usage: /removefilter <source_url> <keyword>")
+        return
 
-        source_url = args[0]
-        keyword = " ".join(args[1:])
-        from aiosqlite import connect
-        async with connect("feedforwarder.db") as db:
-            cursor = await db.execute("""
-                DELETE FROM filters
-                WHERE keyword = ? AND source_id IN (
-                    SELECT id FROM sources WHERE url = ?
-                )
-            """, (keyword, source_url))
-            await db.commit()
-            if cursor.rowcount:
-                await update.message.reply_text(f"🧹 Filter removed: `{keyword}` from {source_url}", parse_mode=ParseMode.MARKDOWN)
-            else:
-                await update.message.reply_text("⚠️ Filter not found.")
+    source_url = args[0]
+    keyword = " ".join(args[1:])
+    success = await db.remove_filter(source_url, keyword)
+    if success:
+        await update.message.reply_text(f"🧹 Filter removed: `{keyword}` from {source_url}", parse_mode=ParseMode.MARKDOWN)
+    else:
+        await update.message.reply_text("⚠️ Filter not found.")
 
 
 async def list_filters(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -231,19 +215,11 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE, admin_
         await update.message.reply_text("🚫 You are not authorized to view admin stats.")
         return
 
-    from aiosqlite import connect
-    async with connect("feedforwarder.db") as db:
-        cursor1 = await db.execute("SELECT COUNT(*) FROM users")
-        users = (await cursor1.fetchone())[0]
-        cursor2 = await db.execute("SELECT COUNT(*) FROM sources")
-        sources = (await cursor2.fetchone())[0]
-        cursor3 = await db.execute("SELECT COUNT(*) FROM targets")
-        targets = (await cursor3.fetchone())[0]
-
+    stats = await db.get_admin_stats()
     await update.message.reply_text(
         f"🛠️ *Admin Panel Stats:*\n"
-        f"- 👥 Users: {users}\n"
-        f"- 📚 Sources: {sources}\n"
-        f"- 🎯 Targets: {targets}",
+        f"- 👥 Users: {stats['users']}\n"
+        f"- 📚 Sources: {stats['sources']}\n"
+        f"- 🎯 Targets: {stats['targets']}",
         parse_mode=ParseMode.MARKDOWN
     )

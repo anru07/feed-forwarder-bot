@@ -23,9 +23,9 @@ async def start_web():
     app.add_routes([web.get("/healthz", handle_healthcheck)])
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, port=int(os.getenv("PORT", 8080)))
+    site = web.TCPSite(runner, host="0.0.0.0", port=int(os.getenv("PORT", 8080)))
     await site.start()
-    logging.info("Web server running at /healthz")
+    logging.info(f"Web server running on 0.0.0.0:{os.getenv('PORT', 8080)}/healthz")
 
 # 🤖 Start the bot + scheduler
 async def start_bot():
@@ -40,7 +40,20 @@ async def start_bot():
     schedule_fetching(application)
 
     logging.info("Bot is polling...")
-    await application.run_polling()
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling()
+    
+    # Keep the application running
+    try:
+        while True:
+            await asyncio.sleep(1)
+    except KeyboardInterrupt:
+        logging.info("Shutting down bot...")
+    finally:
+        await application.updater.stop()
+        await application.stop()
+        await application.shutdown()
 
 # 🚀 Launch both bot and health server
 async def start_bot_and_server():
