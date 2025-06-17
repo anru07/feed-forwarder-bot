@@ -13,7 +13,7 @@ from bot.database.queries import (
 )
 from utils import log_info
 
-FETCH_INTERVAL_MIN = 30
+FETCH_INTERVAL_MIN = 2
 
 def schedule_fetching(application):
     scheduler = AsyncIOScheduler()

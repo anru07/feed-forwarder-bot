@@ -26,6 +26,7 @@ HELP_TEXT = """
 /listfilters – List all filters by source.
 
 /status – Get status of your bot session.
+/fetchnow – Manually fetch articles from all sources.
 /adminpanel – Admin stats (restricted).
 """
 
@@ -49,6 +50,7 @@ def register_handlers(app: Application, admin_ids: list[int]):
     app.add_handler(CommandHandler("listfilters", list_filters))
 
     app.add_handler(CommandHandler("adminpanel", partial(admin_panel, admin_ids=admin_ids)))
+    app.add_handler(CommandHandler("fetchnow", fetch_now))
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -208,6 +210,15 @@ async def list_filters(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     formatted = "\n".join(f"• `{kw}`" for kw in filters)
     await update.message.reply_text(f"🔎 *Filters for {source_url}:*\n{formatted}", parse_mode=ParseMode.MARKDOWN)
+
+async def fetch_now(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    await update.message.reply_text("🔄 Fetching articles now...")
+    
+    from bot.scheduler.jobs import fetch_and_forward
+    await fetch_and_forward(context.bot)
+    
+    await update.message.reply_text("✅ Fetch completed!")
 
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE, admin_ids):
     user_id = update.effective_user.id
