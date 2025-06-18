@@ -24,8 +24,8 @@ async def start_web():
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, host="0.0.0.0", port=10000)
-await site.start()
-logging.info("Web server running on 0.0.0.0:10000/healthz")
+    await site.start()
+    logging.info("Web server running on 0.0.0.0:10000/healthz")
 
 
 # 🤖 Start the bot + scheduler
