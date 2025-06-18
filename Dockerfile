@@ -14,5 +14,8 @@ RUN pip install -r requirements.txt
 # Copy the rest of your app
 COPY . .
 
+# Expose port for Render to detect your service
+EXPOSE 10000
+
 # Start your bot
 CMD ["python", "main.py"]
