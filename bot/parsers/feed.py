@@ -4,6 +4,7 @@ import aiohttp
 import feedparser
 from bs4 import BeautifulSoup
 from utils import sanitize_text, log_info
+from urllib.parse import urljoin
 
 HEADERS = {"User-Agent": "Mozilla/5.0 FeedForwarderBot/1.0"}
 
@@ -61,13 +62,30 @@ async def fetch_articles(url: str) -> list[dict]:
     Returns list of articles with title, summary, and link.
     """
     try:
-        # Check if it's likely an RSS feed
         if url.endswith(('.rss', '.xml')) or 'rss' in url.lower() or 'feed' in url.lower():
             return await parse_rss(url)
-        else:
-            # For HTML pages, return as single article
-            article = await parse_html(url)
-            return [article] if article['title'] != 'No Title' else []
+
+        # Try to discover RSS feeds from HTML
+        async with aiohttp.ClientSession() as session:
+            html = await fetch_url(session, url)
+            soup = BeautifulSoup(html, 'html.parser')
+
+            # Find embedded RSS feed links
+            rss_links = [
+                link.get("href")
+                for link in soup.find_all("link", type="application/rss+xml")
+                if link.get("href")
+            ]
+
+            if rss_links:
+                rss_url = rss_links[0]
+                if not rss_url.startswith("http"):
+                    rss_url = urljoin(url, rss_url)
+                return await parse_rss(rss_url)
+
+        # Fallback: treat as article
+        article = await parse_html(url)
+        return [article] if article['title'] != 'No Title' else []
 
     except Exception as e:
         log_info(f"Error fetching articles from {url}: {e}")
